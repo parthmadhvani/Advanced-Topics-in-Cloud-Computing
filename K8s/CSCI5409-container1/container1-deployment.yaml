@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: container1
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: container1
+  template:
+    metadata:
+      labels:
+        app: container1
+    spec:
+      containers:
+      - name: container1
+        image: us-central1-docker.pkg.dev/k8s-project-429019/k8-art-reg/container1:latest 
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 6000
+        volumeMounts:
+        - mountPath: /parth_PV_dir
+          name: persistent-volume
+        env:
+        - name: PORT
+          value: "6000"
+        - name: FILE_DIR
+          value: "/parth_PV_dir"
+        - name: CONTAINER_2_ENDPOINT
+          value: "http://container2-service:90/calculate"
+      volumes:
+      - name: persistent-volume
+        persistentVolumeClaim:
+          claimName: parth-pv-claim
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: container1-service
+spec:
+  selector:
+    app: container1
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 6000
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: parth-pv-claim
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

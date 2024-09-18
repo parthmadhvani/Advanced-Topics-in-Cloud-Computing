@@ -1,0 +1,16 @@
+services:
+  container1:
+    image: pmadhvani/container1
+    ports:
+      - "6000:6000"
+    volumes:
+      - .:/data
+    depends_on:
+      - container2
+
+  container2:
+    image: pmadhvani/container2
+    ports:
+      - "7000:7000"
+    volumes:
+      - .:/data

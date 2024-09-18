@@ -1,0 +1,45 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+
+  - id: GKE  
+    name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: 'bash'
+    args:
+      - "-c"
+      - |
+        echo "trying to log into k8s."
+        gcloud container clusters get-credentials cluster-k8s --zone us-central1-c --project k8s-project-429019
+
+
+  - id: Build
+    name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        echo "building image..."
+        docker build -t us-central1-docker.pkg.dev/k8s-project-429019/k8-art-reg/container1:latest .
+        echo "image build."
+
+  - id: Push
+    name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        echo "pushing Docker image..."
+        docker push us-central1-docker.pkg.dev/k8s-project-429019/k8-art-reg/container1:latest
+        echo "pushed seccessfully..."
+  
+  - id: Update GKE
+    name: "gcr.io/cloud-builders/kubectl"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        echo "updating pods..."
+        kubectl get deployment container1 || kubectl apply -f container1-deployment.yaml
+        kubectl set image deployment/container1 container1=us-central1-docker.pkg.dev/k8s-project-429019/k8-art-reg/container1:latest
+        echo "Image updated successfully."
